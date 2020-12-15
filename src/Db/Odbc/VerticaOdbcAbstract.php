@@ -172,15 +172,21 @@ abstract class VerticaOdbcAbstract
      * @param string $sql Query string
      *
      * @return resource
-     * @throws VerticaQueryException
+     * @throws VerticaConnectionException|VerticaQueryException
      * @author Sergii Katrych <sergii.katrych@westwing.de>
      */
     public function query($sql)
     {
-        $resource = odbc_exec($this->getConnection(), $sql);
+        $connection = $this->getConnection();
+
+        if (($connection === false) || (is_resource($connection) === false)) {
+            throw new VerticaConnectionException('Unable to connect to Vertica or the connection is lost');
+        }
+
+        $resource = odbc_exec($connection, $sql);
 
         if (false === $resource) {
-            throw new VerticaQueryException(odbc_errormsg($this->getConnection()), odbc_error($this->getConnection()));
+            throw new VerticaQueryException('[' . odbc_error($connection) . '] ' . odbc_errormsg($connection));
         }
 
         return $resource;
